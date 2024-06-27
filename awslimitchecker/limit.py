@@ -433,7 +433,6 @@ class AwsLimit(object):
                 continue
             pct = (usage / (limit * 1.0)) * 100
             if crit_int is not None and usage >= crit_int:
-                self._criticals.append(u)
                 all_ok = False
             elif pct >= crit_pct:
                 self._criticals.append(u)
