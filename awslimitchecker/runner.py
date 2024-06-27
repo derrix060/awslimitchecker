@@ -37,19 +37,20 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ##############################################################################
 """
 
-import sys
 import argparse
-import logging
 import json
-import boto3
+import logging
+import sys
 import time
+
+import boto3
 import tabulate
 
-from .checker import AwsLimitChecker
-from .utils import StoreKeyValuePair, dict2cols, issue_string_tuple
-from .limit import SOURCE_TA, SOURCE_API, SOURCE_QUOTAS
-from .metrics import MetricsProvider
 from .alerts import AlertProvider
+from .checker import AwsLimitChecker
+from .limit import SOURCE_API, SOURCE_QUOTAS, SOURCE_TA
+from .metrics import MetricsProvider
+from .utils import StoreKeyValuePair, dict2cols, issue_string_tuple
 
 try:
     from urllib.parse import urlparse
