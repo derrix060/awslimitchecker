@@ -769,22 +769,18 @@ class TestShowUsage(RunnerTester):
         mock_checker = Mock(spec_set=AwsLimitChecker)
         mock_checker.get_limits.return_value = limits
         self.cls.checker = mock_checker
-        with patch('awslimitchecker.runner.dict2cols') as mock_d2c:
-            mock_d2c.return_value = 'd2cval'
+        with patch('awslimitchecker.runner.tabulate') as mock_tabulate:
             self.cls.show_usage()
-        out, err = capsys.readouterr()
-        assert out == 'd2cval\n'
-        assert mock_checker.mock_calls == [
-            call.find_usage(service=None, use_ta=True),
-            call.get_limits(service=None, use_ta=True)
-        ]
-        assert mock_d2c.mock_calls == [
-            call({
-                'SvcBar/bar limit2': '22',
-                'SvcBar/barlimit1': '11',
-                'SvcFoo/foo limit3': '33',
-            })
-        ]
+            assert mock_checker.mock_calls == [
+                call.find_usage(service=None, use_ta=True),
+                call.get_limits(service=None, use_ta=True)
+            ]
+            assert len(mock_tabulate.method_calls) == 1
+            assert mock_tabulate.method_calls[0].args == ([
+                ['SvcBar/bar limit2', '-', '22', '-', '<unknown>'],
+                ['SvcBar/barlimit1', '-', '11', '-', '<unknown>'],
+                ['SvcFoo/foo limit3', '-', '33', '-', '<unknown>']
+            ],)
 
     def test_one_service(self, capsys):
         limits = {
@@ -796,20 +792,17 @@ class TestShowUsage(RunnerTester):
         self.cls.checker = mock_checker
         self.cls.service_name = ['SvcFoo']
         self.cls.skip_ta = True
-        with patch('awslimitchecker.runner.dict2cols') as mock_d2c:
-            mock_d2c.return_value = 'd2cval'
+        with patch('awslimitchecker.runner.tabulate') as mock_tabulate:
             self.cls.show_usage()
-        out, err = capsys.readouterr()
-        assert out == 'd2cval\n'
-        assert mock_checker.mock_calls == [
-            call.find_usage(service=['SvcFoo'], use_ta=False),
-            call.get_limits(service=['SvcFoo'], use_ta=False)
-        ]
-        assert mock_d2c.mock_calls == [
-            call({
-                'SvcFoo/foo limit3': '33',
-            })
-        ]
+            out, err = capsys.readouterr()
+            assert mock_checker.mock_calls == [
+                call.find_usage(service=['SvcFoo'], use_ta=False),
+                call.get_limits(service=['SvcFoo'], use_ta=False)
+            ]
+            assert len(mock_tabulate.method_calls) == 1
+            assert mock_tabulate.method_calls[0].args == (
+                [['SvcFoo/foo limit3', '-', '33', '-', '<unknown>']],
+            )
 
 
 class TestCheckThresholds(RunnerTester):

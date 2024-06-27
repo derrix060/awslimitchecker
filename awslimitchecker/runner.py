@@ -37,18 +37,20 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ##############################################################################
 """
 
-import sys
 import argparse
-import logging
 import json
-import boto3
+import logging
+import sys
 import time
 
-from .checker import AwsLimitChecker
-from .utils import StoreKeyValuePair, dict2cols, issue_string_tuple
-from .limit import SOURCE_TA, SOURCE_API, SOURCE_QUOTAS
-from .metrics import MetricsProvider
+import boto3
+import tabulate
+
 from .alerts import AlertProvider
+from .checker import AwsLimitChecker
+from .limit import SOURCE_API, SOURCE_QUOTAS, SOURCE_TA
+from .metrics import MetricsProvider
+from .utils import StoreKeyValuePair, dict2cols, issue_string_tuple
 
 try:
     from urllib.parse import urlparse
@@ -319,12 +321,31 @@ class Runner(object):
             service=self.service_name, use_ta=(not self.skip_ta))
         limits = self.checker.get_limits(
             service=self.service_name, use_ta=(not self.skip_ta))
-        data = {}
+        headers = ['Service Limit', 'Resource', 'Usage #', 'Usage %', 'Limit']
+        table = []
         for svc in sorted(limits.keys()):
             for lim in sorted(limits[svc].keys()):
-                data["{s}/{l}".format(s=svc, l=lim)] = '{v}'.format(
-                    v=limits[svc][lim].get_current_usage_str())
-        print(dict2cols(data))
+                data = limits[svc][lim]
+                for usage in data.get_current_usage():
+                    service = svc
+                    limit_name = lim
+                    resource = usage.resource_id or '-'
+                    limit = "<unknown>"
+                    if data.get_limit():
+                        limit = data.get_limit()
+                    use = usage.value
+                    use_percent = "-"
+                    if isinstance(limit, (int, float)):
+                        use_percent = "{:.0f} %".format((use / limit) * 100)
+                    table.append([
+                        f"{service}/{limit_name}",
+                        resource,
+                        str(use),
+                        use_percent,
+                        str(limit),
+                    ])
+        print(tabulate.tabulate(
+            table, headers=headers, tablefmt="simple_outline"))
 
     def check_thresholds(self, metrics=None):
         have_warn = False
