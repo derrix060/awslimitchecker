@@ -50,7 +50,8 @@ requires = [
     'python-dateutil',
     'versionfinder>=0.1.1',
     'pytz',
-    'urllib3'
+    'urllib3',
+    'tabulate>=0.9.0',
 ]
 
 classifiers = [

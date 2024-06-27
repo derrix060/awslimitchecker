@@ -43,6 +43,7 @@ import logging
 import json
 import boto3
 import time
+import tabulate
 
 from .checker import AwsLimitChecker
 from .utils import StoreKeyValuePair, dict2cols, issue_string_tuple
@@ -319,12 +320,20 @@ class Runner(object):
             service=self.service_name, use_ta=(not self.skip_ta))
         limits = self.checker.get_limits(
             service=self.service_name, use_ta=(not self.skip_ta))
-        data = {}
+        headers = ['Service Limit', 'Resource', 'Usage #', 'Usage %', 'Limit']
+        table = []
         for svc in sorted(limits.keys()):
             for lim in sorted(limits[svc].keys()):
-                data["{s}/{l}".format(s=svc, l=lim)] = '{v}'.format(
-                    v=limits[svc][lim].get_current_usage_str())
-        print(dict2cols(data))
+                data = limits[svc][lim]
+                for usage in data.get_current_usage():
+                    service = svc
+                    limit_name = lim
+                    resource = usage.resource_id or '-'
+                    limit = int(data.quotas_limit) if data.quotas_limit else "<unknown>"
+                    use = usage.value
+                    use_percent = "{:.0f} %".format((use / limit) * 100) if isinstance(limit, (int, float)) else "-"
+                    table.append([f"{service}/{limit_name}", resource, str(use), use_percent, str(limit)])
+        print(tabulate.tabulate(table, headers=headers, tablefmt="simple_outline"))
 
     def check_thresholds(self, metrics=None):
         have_warn = False
