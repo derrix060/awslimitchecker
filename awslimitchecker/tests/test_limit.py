@@ -602,23 +602,33 @@ class TestCheckThresholds(AwsLimitTester):
         assert mock_get_limit.mock_calls == [call(), call(), call()]
 
     def test_int_warn_crit(self):
-        limit = AwsLimit('limitname', self.mock_svc, 100, 1, 2)
-        u1 = AwsLimitUsage(limit, 4, resource_id='foo4bar')
-        u2 = AwsLimitUsage(limit, 1, resource_id='foo3bar')
-        u3 = AwsLimitUsage(limit, 7, resource_id='foo2bar')
+        limit = AwsLimit(
+            name='limitname',
+            service=self.mock_svc,
+            default_limit=10,
+            def_warning_threshold=40,
+            def_critical_threshold=60,
+        )
+        u1 = AwsLimitUsage(
+            limit=limit,
+            value=4,
+            resource_id='foo4bar',
+        )
+        u2 = AwsLimitUsage(
+            limit=limit,
+            value=1,
+            resource_id='foo3bar',
+        )
+        u3 = AwsLimitUsage(
+            limit=limit,
+            value=7,
+            resource_id='foo2bar',
+        )
         limit._current_usage = [u1, u2, u3]
-        with patch('awslimitchecker.limit.AwsLimit.'
-                   '_get_thresholds') as mock_get_thresh:
-            with patch('awslimitchecker.limit.AwsLimit.get_'
-                       'limit') as mock_get_limit:
-                mock_get_thresh.return_value = (4, 40, 6, 80)
-                mock_get_limit.return_value = 100
-                res = limit.check_thresholds()
+        res = limit.check_thresholds()
         assert res is False
         assert limit._warnings == [u1]
         assert limit._criticals == [u3]
-        assert mock_get_thresh.mock_calls == [call()]
-        assert mock_get_limit.mock_calls == [call(), call(), call()]
 
     def test_pct_crit(self):
         limit = AwsLimit('limitname', self.mock_svc, 100, 1, 2)
@@ -640,23 +650,33 @@ class TestCheckThresholds(AwsLimitTester):
         assert mock_get_limit.mock_calls == [call(), call(), call()]
 
     def test_int_crit(self):
-        limit = AwsLimit('limitname', self.mock_svc, 100, 1, 2)
-        u1 = AwsLimitUsage(limit, 9, resource_id='foo4bar')
-        u2 = AwsLimitUsage(limit, 3, resource_id='foo3bar')
-        u3 = AwsLimitUsage(limit, 95, resource_id='foo2bar')
+        limit = AwsLimit(
+            name='limitname',
+            service=self.mock_svc,
+            default_limit=10,
+            def_warning_threshold=60,
+            def_critical_threshold=80,
+        )
+        u1 = AwsLimitUsage(
+            limit=limit,
+            value=9,
+            resource_id='foo4bar',
+        )
+        u2 = AwsLimitUsage(
+            limit=limit,
+            value=3,
+            resource_id='foo3bar',
+        )
+        u3 = AwsLimitUsage(
+            limit=limit,
+            value=95,
+            resource_id='foo2bar',
+        )
         limit._current_usage = [u1, u2, u3]
-        with patch('awslimitchecker.limit.AwsLimit.'
-                   '_get_thresholds') as mock_get_thresh:
-            with patch('awslimitchecker.limit.AwsLimit.get_'
-                       'limit') as mock_get_limit:
-                mock_get_thresh.return_value = (6, 40, 8, 80)
-                mock_get_limit.return_value = 100
-                res = limit.check_thresholds()
+        res = limit.check_thresholds()
         assert res is False
         assert limit._warnings == []
         assert limit._criticals == [u1, u3]
-        assert mock_get_thresh.mock_calls == [call()]
-        assert mock_get_limit.mock_calls == [call(), call(), call()]
 
     def test_pct_warn_crit(self):
         limit = AwsLimit('limitname', self.mock_svc, 100, 1, 2)

@@ -330,11 +330,22 @@ class Runner(object):
                     service = svc
                     limit_name = lim
                     resource = usage.resource_id or '-'
-                    limit = int(data.quotas_limit) if data.quotas_limit else "<unknown>"
+                    limit = "<unknown>"
+                    if data.quotas_limit:
+                        limit = int(data.quotas_limit)
                     use = usage.value
-                    use_percent = "{:.0f} %".format((use / limit) * 100) if isinstance(limit, (int, float)) else "-"
-                    table.append([f"{service}/{limit_name}", resource, str(use), use_percent, str(limit)])
-        print(tabulate.tabulate(table, headers=headers, tablefmt="simple_outline"))
+                    use_percent = "-"
+                    if isinstance(limit, (int, float)):
+                        use_percent = "{:.0f} %".format((use / limit) * 100)
+                    table.append([
+                        f"{service}/{limit_name}",
+                        resource,
+                        str(use),
+                        use_percent,
+                        str(limit),
+                    ])
+        print(tabulate.tabulate(
+            table, headers=headers, tablefmt="simple_outline"))
 
     def check_thresholds(self, metrics=None):
         have_warn = False
